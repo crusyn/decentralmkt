@@ -25,6 +25,18 @@ contract EcommerceStore {
   ProductStatus status;
   //until here
   ProductCondition condition;
+
+  /*The key is the address of the bidder and value is the mapping of the
+  hashed bid string to the bid struct.*/
+  mapping (address => mapping (bytes32 => Bid)) bids;
+ }
+
+ struct Bid {
+   address bidder;
+   unit productId;
+   unit value;  //Amount sent by the bidder
+   bool revealed; /*strange variable, not sure what it is for, flag for if
+   has concluded?*/
  }
 
  function EcommerceStore() public {
