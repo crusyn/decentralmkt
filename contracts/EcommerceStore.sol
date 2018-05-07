@@ -1,11 +1,16 @@
 pragma solidity ^0.4.13;
 
+/// @title Decentral Market
+/// @author @crusyn by way of Mahesh Zastrin
 contract EcommerceStore {
  enum ProductStatus { Open, Sold, Unsold }
  enum ProductCondition { New, Used }
 
  uint public productIndex;
+ /// @notice This is the mapping used to keep track of which products are 
+ /// in which merchant's store - address of store -> id of Product -> Product Struct
  mapping (address => mapping(uint => Product)) stores;
+ /// @notice productId -> address of store
  mapping (uint => address) productIdInStore;
 
  struct Product {
@@ -41,6 +46,15 @@ contract EcommerceStore {
 
  function EcommerceStore() public {
   productIndex = 0;
+ }
+
+ /// @notice this is a public function that let's a user bid on a product
+ /// @dev
+ /// @param _productId of the product the user want to bit on
+ /// @param _bid encrypted string of the bid amount hased with a secret
+ /// @return returns true if the bid is successfully placed
+ function bid(unit _productId, bytes32 _bid) payable public returns (bool){
+   Product storage product = stores[]
  }
 
  function addProductToStore(string _name, string _category, string _imageLink,
