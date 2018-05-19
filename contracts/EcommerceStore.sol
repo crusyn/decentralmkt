@@ -84,17 +84,44 @@ contract EcommerceStore {
 
  function revealBid(unit _productId, string _amountBid, string _secret) public returns (bool){
    //hwell, let's see the hash would have been....
-   bytes32 hashedOutput = sha3(_amountBid, _secret);
+   bytes32 sealedBid = sha3(_amountBid, _secret)
 
+   //ok, let's get this product struct, don't ask me why we record it to the
+   //blockchain
+   Product storage currentProduct = stores[productIdInStore[_productId]_productId]];
+
+   //let's make sure the auction has ended...
+   require (now > currentProduct.auctionEndTime);
 
    //Liar.  My fan fucking lied to me.  No corresponding hash found: This means
    //the user is trying to reveal something which wasn't even bid.
-   //In that case, just throw an exception
+   //In that case, just throw an exception using a require
 
+   //We'll do this by looking up the bid
+   Bid memory bidInfo = currentProduct.bids[msg.sender][sealedBid];
+   //is there a bidder?  presumably this would be 0 if there was no bidder, I
+   //wonder why we wouldn't check to make sure the bidder is not = sender ???
+   require(bidInfo.bidder> 0);
+   //let's make sure the bid wasn't yet revealed, we can't reveal twice
+   require(bidInfo.revealed == false);
 
+   //OK.  we have a valid bid.  no time to see if we are the top bidder or if
+   //we should issue a refund.
+   unit refund;
+
+   unit amount = stringToUint(_amount);
 
    //Bid amount < sent amount: The user for example bid $10 but only sent $5.
    //Since it is invalid, we will just refund this amount to the user.
+   if(bidInfo.value < amount){
+     
+
+
+   }
+
+   //
+
+
 
  function addProductToStore(string _name, string _category, string _imageLink,
    string _descLink, uint _auctionStartTime, uint _auctionEndTime,
