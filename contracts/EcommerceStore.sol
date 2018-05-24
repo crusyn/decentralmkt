@@ -109,14 +109,33 @@ contract EcommerceStore {
    //we should issue a refund.
    unit refund;
 
-   unit amount = stringToUint(_amount);
+   unit amountInBid = stringToUint(_amountBid);
+
+   unit amountSendToContract = bidInfo.value;
 
    //Bid amount < sent amount: The user for example bid $10 but only sent $5.
    //Since it is invalid, we will just refund this amount to the user.
-   if(bidInfo.value < amount){
-     
+   if(amountInBid < amountSendToContract){
+     refund = amountSendToContract;
+   }
+   //Bid amount >= sent amount: It's a valid bid. We will now check to see
+   // if we should record this bid.
+   else {
+     //First reveal: If this is the first valid bid reveal, we record this
+     // as the highest bid and also record who bid this value. We also set
+     // the second highest bid to the product starting price (If no one else
+     // reveals, this user just pays the start price. Remember the winner
+     // always pays the second highest price?)
 
+     //check if this is the first reveal by seeing if highestBidder is zero
+     if(currentProduct.highestBidder == 0){
+       currentProduct.highestBidder == msg.sender;
+       currentProduct.highestBid == amountInBid;
+       currentProduct.secondHighestBid == currentProduct.startPrice;
 
+       //refund anything not used by the bid
+       refund = amountSendToContract - amountInBid;
+     }
    }
 
    //
