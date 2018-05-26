@@ -136,11 +136,41 @@ contract EcommerceStore {
        //refund anything not used by the bid
        refund = amountSendToContract - amountInBid;
      }
+
+     //Higher Bid: If the user reveals and their bid is higher than the current
+     //highest revealed bid, we record this bidder and their bid as highest
+     // and set the second highest bid value to old bid amount
+
+     else if (amountInBid > currentProduct.highestBid){
+       currentProduct.secondHighestBid == currentProduct.highestBid;
+       //refund the previous bidder his bid
+       currentProduct.highestBidder.transfer(currentProduct.highestBid);
+
+       currentProduct.highestBidder == msg.sender;
+       currentProduct.highestBid == amountInBid;
+       refund = amountSendToContract - amountInBid;
+     }
+
+     //Lower Bid: If the bid is lower than highest bid, it's a losing bid.
+     //But we will also check if this is lower than the second highest bid.
+     //If yes, we just refund the item because they lost otherwise set this
+     //amount to second highest bid.
+     else if (amountInBid <= currentProduct.highestBid){
+        if(amountInBid > currentProduct.secondHighestBid){
+          currentProduct.secondHighestBid = amountInBid;
+        }
+
+        refund = amountSendToContract;
+     }
    }
 
-   //
+   //Mark as revealed, not sure what for yet... let's see
+   currentProduct.bids[msg.sender][sealedBid].revealed = true;
 
-
+   if(refund > 0){
+     msg.sender.transfer(refund);
+   }
+ }
 
  function addProductToStore(string _name, string _category, string _imageLink,
    string _descLink, uint _auctionStartTime, uint _auctionEndTime,
