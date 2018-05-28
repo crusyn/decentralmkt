@@ -15,6 +15,14 @@ contract EcommerceStore {
  /// product struct.  Each product only lives in 1 store (maybe)
  mapping (uint => address) productIdInStore;
 
+ struct Bid {
+   address bidder;
+   uint productId;
+   uint value;  //Amount of ETH sent by the bidder in the bid call
+   bool revealed;  //strange variable, not sure what it is for, flag for if
+//has concluded?  Nvm, used when the bid is revealed.
+ }
+
  struct Product {
   uint id;
   string name;
@@ -36,15 +44,9 @@ contract EcommerceStore {
   /*The key is the address of the bidder and value is the mapping of the
   hashed bid string to the bid struct.*/
   mapping (address => mapping (bytes32 => Bid)) bids;
- }
+}
 
- struct Bid {
-   address bidder;
-   unit productId;
-   unit value;  //Amount of ETH sent by the bidder in the bid call
-   bool revealed; /*strange variable, not sure what it is for, flag for if
-   has concluded?*/
- }
+
 
  function EcommerceStore() public {
   productIndex = 0;
@@ -58,15 +60,15 @@ contract EcommerceStore {
  /// @param _productId of the product the user want to bit on
  /// @param _bid encrypted string of the bid amount hased with a secret
  /// @return returns true if the bid is successfully placed
- function bid(unit _productId, bytes32 _bid) payable public returns (bool){
+ function bid(uint _productId, bytes32 _bid) payable public returns (bool){
    // Need to query the stores mapping to get the pointer to the product struct
    // Not sure why, but in this case it seems we are persiting this to the chain
-   Product storage product = stores[productIdInStore[_productId][_productId]];
+   Product storage product = stores[productIdInStore[_productId]][_productId];
 
    //Doing some checks, checking contract state, using require
    //now = current block's timestamp
    require (now >= product.auctionStartTime); //the auction must have started
-   require (now <= product._auctionEndTime); //the auction must not have ended
+   require (now <= product.auctionEndTime); //the auction must not have ended
 
    require (msg.value > product.startPrice); //this is kind of a strange
    //constaint, why?  Wouldn't this just be a failed bid at the end?
@@ -74,7 +76,7 @@ contract EcommerceStore {
 
    //need to add to the Bids struct by bidder and bid hash
    //(the same sender can bid twice)
-   product.bids[msg.sender][_bid] = Bid(msg.sender, _productId, msg.value, false)
+   product.bids[msg.sender][_bid] = Bid(msg.sender, _productId, msg.value, false);
 
    product.totalBids += 1; //Increment bid count
 
@@ -82,13 +84,13 @@ contract EcommerceStore {
    return true;
  }
 
- function revealBid(unit _productId, string _amountBid, string _secret) public returns (bool){
+ function revealBid(uint _productId, string _amountBid, string _secret) public returns (bool){
    //hwell, let's see the hash would have been....
-   bytes32 sealedBid = sha3(_amountBid, _secret)
+   bytes32 sealedBid = sha3(_amountBid, _secret);
 
    //ok, let's get this product struct, don't ask me why we record it to the
    //blockchain
-   Product storage currentProduct = stores[productIdInStore[_productId]_productId]];
+   Product storage currentProduct = stores[productIdInStore[_productId]][_productId];
 
    //let's make sure the auction has ended...
    require (now > currentProduct.auctionEndTime);
@@ -107,11 +109,11 @@ contract EcommerceStore {
 
    //OK.  we have a valid bid.  no time to see if we are the top bidder or if
    //we should issue a refund.
-   unit refund;
+   uint refund;
 
-   unit amountInBid = stringToUint(_amountBid);
+   uint amountInBid = stringToUint(_amountBid);
 
-   unit amountSendToContract = bidInfo.value;
+   uint amountSendToContract = bidInfo.value;
 
    //Bid amount < sent amount: The user for example bid $10 but only sent $5.
    //Since it is invalid, we will just refund this amount to the user.
@@ -196,7 +198,12 @@ contract EcommerceStore {
     productIdInStore[productIndex] = msg.sender;
    }
 
-//we don't return the private parts of the struct it seems
+
+   /// @notice this is a public function that allows people to view a Product
+   /// @dev
+   /// @param _productId id of the product you want the details of
+   /// @return returns id, name, category, imageLink, descLink, auctionStartTime,
+   /// auctionEndTime, startPrice, condition
    function getProduct(uint _productId) view public returns (uint, string, string,
      string, string, uint, uint, uint, ProductStatus, ProductCondition){
        Product memory product = stores[productIdInStore[_productId]][_productId];
@@ -204,4 +211,34 @@ contract EcommerceStore {
          product.descLink, product.auctionStartTime, product.auctionEndTime,
          product.startPrice, product.status, product.condition);
      }
+
+    //Apparently the stringToUint function is not something that comes with
+    //Ethereum...
+    /// @notice this is a private function turns strings to ints
+    /// @dev this function uses the fact that ints are in order in the character
+    /// set to derive the value
+    /// @param _str a string that you want to convert to an int
+    /// @return returns the unit version of the string
+    function stringToUint(string _str) pure private returns (uint){
+      //pure means this function doesn't write or read from the blockchain
+      bytes memory b = bytes(_str);
+      uint result = 0;
+      for (uint i = 0; i < b.length; i++) {
+        if (b[i] >= 48 && b[i] <= 57) {
+          result = result * 10 + (uint(b[i]) - 48);
+        }
+      }
+      return result;
+    }
+
+    function highestBidderInfo(uint _productId) view public returns (address, uint, uint) {
+      Product memory product = stores[productIdInStore[_productId]][_productId];
+      return (product.highestBidder, product.highestBid, product.secondHighestBid);
+    }
+
+    function totalBids(uint _productId) view public returns (uint) {
+      Product memory product = stores[productIdInStore[_productId]][_productId];
+      return product.totalBids;
+    }
+
 }
