@@ -78,6 +78,7 @@ contract EcommerceStore {
    //(the same sender can bid twice)
    product.bids[msg.sender][_bid] = Bid(msg.sender, _productId, msg.value, false);
 
+
    product.totalBids += 1; //Increment bid count
 
    //if all is well say so
@@ -117,7 +118,7 @@ contract EcommerceStore {
 
    //Bid amount < sent amount: The user for example bid $10 but only sent $5.
    //Since it is invalid, we will just refund this amount to the user.
-   if(amountInBid < amountSendToContract){
+   if(amountSendToContract < amountInBid){
      refund = amountSendToContract;
    }
    //Bid amount >= sent amount: It's a valid bid. We will now check to see
