@@ -46,7 +46,21 @@ contract EcommerceStore {
   mapping (address => mapping (bytes32 => Bid)) bids;
 }
 
+event DebugEventAddProd(
+    address indexed _from,
+    uint _value
+  );
 
+  event DebugEventRevealBid(
+      address indexed _from,
+      address _highBidderBefore,
+      address _highBidderAfter,
+      uint _highestBid,
+      uint _secondHighestBid,
+      uint _amtInBid,
+      uint _startPrice,
+      uint _refund
+    );
 
  function EcommerceStore() public {
   productIndex = 0;
@@ -108,7 +122,7 @@ contract EcommerceStore {
    //let's make sure the bid wasn't yet revealed, we can't reveal twice
    require(bidInfo.revealed == false);
 
-   //OK.  we have a valid bid.  no time to see if we are the top bidder or if
+   //OK.  we have a valid bid.  now time to see if we are the top bidder or if
    //we should issue a refund.
    uint refund;
 
@@ -131,13 +145,29 @@ contract EcommerceStore {
      // always pays the second highest price?)
 
      //check if this is the first reveal by seeing if highestBidder is zero
+
+     address highBidderBefore = currentProduct.highestBidder;
+     //address highBidderAfter;
+     //uint highestBid;
+     //uint secondHighestBid;
+
+
      if(currentProduct.highestBidder == 0){
-       currentProduct.highestBidder == msg.sender;
-       currentProduct.highestBid == amountInBid;
-       currentProduct.secondHighestBid == currentProduct.startPrice;
+       currentProduct.highestBidder = msg.sender;
+       currentProduct.highestBid = amountInBid;
+       currentProduct.secondHighestBid = currentProduct.startPrice;
+
+       //highBidderAfter = currentProduct.highestBidder;
+      //highestBid = currentProduct.highestBid;
+       //secondHighestBid = currentProduct.secondHighestBid;
 
        //refund anything not used by the bid
        refund = amountSendToContract - amountInBid;
+       //DEBUG
+       emit DebugEventRevealBid(msg.sender, highBidderBefore,
+         currentProduct.highestBidder, currentProduct.highestBid,
+         currentProduct.secondHighestBid, amountInBid, currentProduct.startPrice,
+         refund);
      }
 
      //Higher Bid: If the user reveals and their bid is higher than the current
@@ -145,12 +175,12 @@ contract EcommerceStore {
      // and set the second highest bid value to old bid amount
 
      else if (amountInBid > currentProduct.highestBid){
-       currentProduct.secondHighestBid == currentProduct.highestBid;
+       currentProduct.secondHighestBid = currentProduct.highestBid;
        //refund the previous bidder his bid
        currentProduct.highestBidder.transfer(currentProduct.highestBid);
 
-       currentProduct.highestBidder == msg.sender;
-       currentProduct.highestBid == amountInBid;
+       currentProduct.highestBidder = msg.sender;
+       currentProduct.highestBid = amountInBid;
        refund = amountSendToContract - amountInBid;
      }
 
@@ -173,6 +203,7 @@ contract EcommerceStore {
    if(refund > 0){
      msg.sender.transfer(refund);
    }
+
  }
 
  function addProductToStore(string _name, string _category, string _imageLink,
@@ -197,6 +228,8 @@ contract EcommerceStore {
     stores[msg.sender][productIndex] = product;
     //map the product back to store
     productIdInStore[productIndex] = msg.sender;
+    //DEBUG
+    emit DebugEventAddProd(msg.sender, productIndex);
    }
 
 
