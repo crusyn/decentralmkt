@@ -9,18 +9,52 @@ import { default as contract } from 'truffle-contract'
 // need to use the built ABI?
 import ecommerce_store_artifacts from '../../build/contracts/EcommerceStore.json'
 
+var EcommerceStore = contract(ecommerce_store_artifacts);
 //get references to ipfs and ethUtils
 const ipfsAPI = require('ipfs-api');
 const ethUtil = require('ethereumjs-util');
 
 //init IPFS
-const ipfsAPI({host: 'localhost', port '5001', protocol: 'http'});
+const ipfs = ipfsAPI({host: 'localhost', port: '5001', protocol: 'http'});
 
 window.App = {
   start: function(){
     var self = this;
+
+    //this is where you have to init web3
+    EcommerceStore.setProvider(web3.currentProvider);
+    renderStore();
   },
 };
+
+function renderStore(){
+  EcommerceStore.deployed().then(function(i){
+    i.getProduct.call(1).then(function(p){
+      //jquery https://jquery.com/
+      $("#product-list").append(buildProduct(p));
+    });
+    i.getProduct.call(2).then(function(p){
+      $("#product-list").append(buildProduct(p));
+    });
+  });
+}
+
+function buildProduct(product){
+  let node = $("<div/>");
+  node.addClass("col-sm-3 text-center col-margin-bottom-1");
+  //paint the image product = getProduct return
+  node.append("<img src='http://ipfs.io/ipfs/" + product[3] + "' width='150px' />");
+  //name
+  node.append("<div>" + product[1] + "</div>");
+  //category
+  node.append("<div>" + product[2] + "</div>");
+  //starttime
+  node.append("<div>" + product[5] + "</div>");
+  //endtime
+  node.append("<div>" + product[6] + "</div>");
+  //start price
+  node.append("<div>Ether" + product[7] + "</div>");
+}
 
 
 window.addEventListener('load', function() {
@@ -30,9 +64,9 @@ window.addEventListener('load', function() {
     // Use Mist/MetaMask's provider
     window.web3 = new Web3(web3.currentProvider);
   } else {
-    console.warn("No web3 detected. Falling back to http://127.0.0.1:9545. You should remove this fallback when you deploy live, as it's inherently insecure. Consider switching to Metamask for development. More info here: http://truffleframework.com/tutorials/truffle-and-metamask");
+    console.warn("No web3 detected. Falling back to http://127.0.0.1:8545. You should remove this fallback when you deploy live, as it's inherently insecure. Consider switching to Metamask for development. More info here: http://truffleframework.com/tutorials/truffle-and-metamask");
     // fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
-    window.web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:9545"));
+    window.web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:8545"));
   }
 
   App.start();
